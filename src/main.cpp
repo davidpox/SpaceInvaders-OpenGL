@@ -14,6 +14,7 @@
 #include "bullet.h"
 #include "alien.h"
 #include "gamestate.h"
+#include "barrier.h"
 
 // // - OpenGL Mathematics - https://glm.g-truc.net/
 #define GLM_FORCE_RADIANS // force glm to use radians
@@ -38,6 +39,7 @@ gamestate *gs = new gamestate();
 std::vector<GLuint> sprog_arr;
 std::vector<GLuint> vao_arr;
 std::vector<alien> alien_arr;
+std::vector<barrier> barrier_arr;
 
 bool isGameRunning;
 
@@ -291,6 +293,7 @@ void update() {
 	if (alien_arr.size() == 0) {
 		initAliens();
 	}
+	//barrier_arr[0].rotate(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void alienShoot() {
@@ -309,7 +312,9 @@ void alienShoot() {
 			std::cout << "ERR ON ALIENSHOOT IT" << std::endl;
 		}
 	}
+
 }
+
 
 void render() {
 
@@ -362,6 +367,15 @@ void render() {
 		glBindVertexArray(0);
 	}
 
+	glUseProgram(sprog_arr[4]);
+	for (int i = 0; i < barrier_arr.size(); i++) {
+		GLint barrierTransLoc = glGetUniformLocation(sprog_arr[4], "trans");
+		glUniformMatrix4fv(barrierTransLoc, 1, GL_FALSE, glm::value_ptr(barrier_arr[i]._transTranslate * barrier_arr[i]._transRotate * barrier_arr[i]._transScale));
+		glBindTexture(GL_TEXTURE_2D, barrier_arr[i].texture);
+		glBindVertexArray(vao_arr[i + 58]);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
 
 	SDL_GL_SwapWindow(win);
 }
@@ -399,6 +413,60 @@ bool checkCollisions(alien &al, bullet &bl) {
 	return true;
 }
 
+void setupAliens() {
+	float xOffset = 0.0f;	// used to initialise positions
+	float yOffset = 0.0f;
+
+	/* Fill alien vector with aliens */
+	for (int i = 0; i < 55; i++) {
+		alien_arr.push_back(alien());
+	}
+	/* Then create VAOs for each alien. */
+	for (int i = 0; i < alien_arr.size(); i++) {
+		vao_arr.push_back(alien_arr[i].createSprite("alien1"));
+	}
+
+	for (int i = 0; i < alien_arr.size(); i++) {
+		if (i % 11 == 0 && i != 0) {
+			yOffset -= 0.15f;
+			xOffset = 0.0f;
+		}
+
+		alien_arr[i].arrange(xOffset, yOffset);
+
+		xOffset += 0.15f;
+	}
+}
+void setupBarriers() {
+
+	for (int i = 0; i < 5; i++) {
+		barrier_arr.push_back(barrier());
+	}
+
+	for (int i = 0; i < barrier_arr.size(); i++) {
+		vao_arr.push_back(barrier_arr[i].createSprite("t_" + std::to_string(i + 1)));
+	}
+
+	for (int i = 0; i < barrier_arr.size(); i++) {
+		switch (i) {
+		case 1:
+			barrier_arr[1].arrange(0.1f, 0.0f);
+			break;
+		case 2:
+			barrier_arr[2].arrange(0.2f, 0.0f);
+			break;
+		case 3:
+			barrier_arr[3].arrange(0.0f, -0.1f);
+			break;
+		case 4:
+			barrier_arr[4].arrange(0.2f, -0.1f);
+			break;
+		default:
+			std::cout << "Switch error" << std::endl;
+			break;
+		}
+	}
+}
 
 int main(int argc, char *argv[]) {
 
@@ -414,48 +482,22 @@ int main(int argc, char *argv[]) {
 		system("PAUSE");
 		return 1;
 	}
-
-	for (int i = 0; i < 55; i++) {
-		alien_arr.push_back(alien());
-	}
-
-	//std::cout << alien_arr.size() << std::endl;
-
-
-
 	vao_arr.push_back(player->createSprite("player"));
 	vao_arr.push_back(bullets->createSprite("bullet"));
-
-	float xOffset = 0.0f;
-	float yOffset = 0.0f;
-
-	for (int i = 0; i < 55; i++) {
-		vao_arr.push_back(alien_arr[i].createSprite("alien1"));
-	}
+	setupAliens();
 	vao_arr.push_back(alienBullet->createSprite("bullet2"));
+	setupBarriers();
 
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
-
-	for (int i = 0; i < alien_arr.size(); i++) {
-		if (i % 11 == 0 && i != 0) {
-			yOffset -= 0.15f;
-			xOffset = 0.0f;
-		}
-
-		alien_arr[i].arrange(xOffset, yOffset);
-
-		xOffset += 0.15f;
-	}
-
-	sprog_arr.push_back(aliens->createShaderProgram());
+	sprog_arr.push_back(alien_arr[0].createShaderProgram());
 	sprog_arr.push_back(alienBullet->createShaderProgram());
+	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
 
 
 	alienBullet->arrangeToAlien();
-
+	
 	std::cout << "OPENGL Version: " << glGetString(GL_VERSION) << std::endl;
-
 	while (gs->isGameRunning) {
 		prevtime = currenttime;
 		currenttime = SDL_GetTicks();

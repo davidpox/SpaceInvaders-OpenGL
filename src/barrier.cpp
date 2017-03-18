@@ -1,24 +1,24 @@
-#include "alien.h"
+#include "barrier.h"
 
-alien::alien()
+barrier::barrier()
 {
-	h = 0.07f;
+	h = 0.1f;
 	w = 0.1f;
 
 }
 
 
-alien::~alien()
+barrier::~barrier()
 {
 }
 
-GLuint alien::createSprite(std::string pic) {
+GLuint barrier::createSprite(std::string pic) {
 	GLfloat verts[] = {
 		// Positions          // Texture Coords 
-		-0.95f, 0.88f, 0.0f,		0.0f, 0.0f,   // Bottom Left
-		-0.85f, 0.88f, 0.0f,	1.0f, 0.0f,   // Bottom Right
-		-0.85f, 0.95f, 0.0f,		1.0f, 1.0f,   // Top Right
-		-0.95f, 0.95f, 0.0f,		0.0f, 1.0f    // Top Left 
+		-0.7f, -0.5f, 0.0f,		1.0f, 1.0f,   // Bottom Left
+		-0.8f, -0.5f, 0.0f,		0.0f, 1.0f,   // Bottom Right
+		-0.8f, -0.6f, 0.0f,		0.0f, 0.0f,   // Top Right
+		-0.7f, -0.6f, 0.0f,		1.0f, 0.0f    // Top Left 
 	};
 	GLuint ind[] = {
 		0, 1, 3,
@@ -28,7 +28,7 @@ GLuint alien::createSprite(std::string pic) {
 	std::string filename = "bin/assets/" + pic + ".png";
 	img = IMG_Load(filename.c_str());
 	if (img == NULL) {
-		std::cout << "ALIEN IMAGE LOAD:: " << IMG_GetError() << std::endl;
+		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;
 		return (GLuint)1;
 	}
 
@@ -64,7 +64,7 @@ GLuint alien::createSprite(std::string pic) {
 	return VAO;
 }
 
-GLuint alien::createShaderProgram() {
+GLuint barrier::createShaderProgram() {
 	GLuint shaderProgram, vertexShader, fragmentShader;
 
 	const GLchar* vertexShaderSource[] = {
@@ -140,21 +140,32 @@ GLuint alien::createShaderProgram() {
 }
 
 void barrier::breakBarrier() {
-	if (position[0] >= -0.9f) {			//&& position[0] >= -0.9f
-		if (dir == SDLK_LEFT) {
-			_transTranslate = glm::translate(_transTranslate, glm::vec3(-0.05f, 0.0f, 0.0f));
-			position[0] -= 0.05f;
-		}
+
+	
+
+	std::string filename = "bin/assets/t" + std::to_string(barrierIndex) + "_" + std::to_string(barrierCount) + ".png";
+	img = IMG_Load(filename.c_str());
+	if (img == NULL) {
+		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;
 	}
-	if (position[0] <= 0.9f) {
-		if (dir == SDLK_RIGHT) {
-			_transTranslate = glm::translate(_transTranslate, glm::vec3(0.05f, 0.0f, 0.0f));
-			position[0] += 0.05f;
-		}
-	}
+
+	
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	SDL_FreeSurface(img);
+
 }
 
-void alien::arrange(float xOffset, float yOffset) {
+void barrier::arrange(float xOffset, float yOffset) {
 	_transTranslate = glm::translate(_transTranslate, glm::vec3(xOffset, yOffset, 0.0f));
 	position[0] += xOffset;
 	position[1] += yOffset;
