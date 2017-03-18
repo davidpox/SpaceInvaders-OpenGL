@@ -20,7 +20,7 @@ public:
 	int barrierCount;
 	int barrierIndex;
 	glm::mat4 _transTranslate, _transRotate, _transScale;
-	glm::vec3 position = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 position = { -0.75f, -0.55f, 0.0f };
 	SDL_Surface* img;
 	GLuint VAO, VBO, EBO, texture;
 	float h, w;

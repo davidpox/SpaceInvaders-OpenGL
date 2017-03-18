@@ -14,7 +14,7 @@
 class bullet
 {
 public:
-	bullet();
+	bullet(std::string name);
 	~bullet();
 
 	GLuint createSprite(std::string pic);
@@ -34,6 +34,8 @@ public:
 
 	float h;
 	float w;
+
+	std::string name;
 
 
 

@@ -2,10 +2,11 @@
 
 
 
-bullet::bullet()
+bullet::bullet(std::string name)
 {
 	isActive = false;
 	moved = false;
+	name = "blank";
 
 	h = 0.05f;
 	w = 0.01f;
@@ -203,6 +204,6 @@ void bullet::arrangeToAlien() {
 
 void bullet::resetPositionAL() {
 	_transTranslate = glm::translate(_transTranslate, glm::vec3(-position.x, -position.y, 0.0f));
-	position.x -= alTravel.x;
-	position.y -= alTravel.y;
+	position.x -= position.x;
+	position.y -= position.y;
 } 

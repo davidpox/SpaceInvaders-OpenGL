@@ -4,7 +4,7 @@ barrier::barrier()
 {
 	h = 0.1f;
 	w = 0.1f;
-
+	barrierIndex = 0;
 }
 
 
@@ -15,10 +15,10 @@ barrier::~barrier()
 GLuint barrier::createSprite(std::string pic) {
 	GLfloat verts[] = {
 		// Positions          // Texture Coords 
-		-0.7f, -0.5f, 0.0f,		1.0f, 1.0f,   // Bottom Left
-		-0.8f, -0.5f, 0.0f,		0.0f, 1.0f,   // Bottom Right
-		-0.8f, -0.6f, 0.0f,		0.0f, 0.0f,   // Top Right
-		-0.7f, -0.6f, 0.0f,		1.0f, 0.0f    // Top Left 
+		-0.8f, -0.6f, 0.0f,		0.0f, 0.0f,   // Bottom Left
+		-0.7f, -0.6f, 0.0f,		1.0f, 0.0f,   // Bottom Right
+		-0.7f, -0.5f, 0.0f,		1.0f, 1.0f,   // Top Right
+		-0.8f, -0.5f, 0.0f,		0.0f, 1.0f    // Top Left 
 	};
 	GLuint ind[] = {
 		0, 1, 3,
@@ -141,10 +141,7 @@ GLuint barrier::createShaderProgram() {
 }
 
 void barrier::breakBarrier() {
-
-	
-
-	std::string filename = "bin/assets/t" + std::to_string(barrierIndex) + "_" + std::to_string(barrierCount) + ".png";
+	std::string filename = "bin/assets/broken_" + std::to_string(barrierIndex) + ".png";
 	img = IMG_Load(filename.c_str());
 	if (img == NULL) {
 		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;

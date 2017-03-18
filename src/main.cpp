@@ -29,8 +29,8 @@
 SDL_Window *win = nullptr;
 SDL_GLContext mainContext;
 PlayerShip *player = new PlayerShip();
-bullet *bullets = new bullet();
-bullet *alienBullet = new bullet();
+bullet *bullets = new bullet("player");
+bullet *alienBullet = new bullet("alien");
 alien *aliens = new alien();
 shotHandler *sh = new shotHandler();
 gamestate *gs = new gamestate();
@@ -124,53 +124,53 @@ int init() {
 	SDL_Log("SDL initialised OK!\n");
 
 	// Window Creation
-win = SDL_CreateWindow("Space Invaders", 500, 500, 500, 700, SDL_WINDOW_OPENGL);
-if (win == nullptr) {
-	SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
-		"SDL_CreateWindow init error: %s\n", glGetError());
-	return 1;
-}
+	win = SDL_CreateWindow("Space Invaders", 500, 500, 500, 700, SDL_WINDOW_OPENGL);
+	if (win == nullptr) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
+			"SDL_CreateWindow init error: %s\n", glGetError());
+		return 1;
+	}
 
 
-// SDL_Image initialise
-int imgFlags = IMG_INIT_PNG | IMG_INIT_JPG;
-if (!(IMG_Init(imgFlags) & imgFlags)) {
-	SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "SDL_image init error: %s\n",
-		IMG_GetError());
-	return 1;
-}
-SDL_Log("SDL_image initialised OK!\n");
+	// SDL_Image initialise
+	int imgFlags = IMG_INIT_PNG | IMG_INIT_JPG;
+	if (!(IMG_Init(imgFlags) & imgFlags)) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "SDL_image init error: %s\n",
+			IMG_GetError());
+		return 1;
+	}
+	SDL_Log("SDL_image initialised OK!\n");
 
-// SDL_ttf initialise
-if (TTF_Init() == -1) {
-	SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "SDL_ttf init error: %s\n",
-		glGetError());
-	return 1;
-}
-SDL_Log("SDL_ttf initialised OK!\n");
+	// SDL_ttf initialise
+	if (TTF_Init() == -1) {
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "SDL_ttf init error: %s\n",
+			glGetError());
+		return 1;
+	}
+	SDL_Log("SDL_ttf initialised OK!\n");
 
 
-/* CONTEXT AND GLEW CREATION */
+	/* CONTEXT AND GLEW CREATION */
 
-SetOpenGLAttr();
+	SetOpenGLAttr();
 
-mainContext = SDL_GL_CreateContext(win);
+	mainContext = SDL_GL_CreateContext(win);
 
-glewExperimental = GL_TRUE;
-glewInit();
+	glewExperimental = GL_TRUE;
+	glewInit();
 
-glViewport(0, 100, 500, 500);
+	glViewport(0, 100, 500, 500);
 
-/* DEBUG INITIALISATION*/
+	/* DEBUG INITIALISATION*/
 
-std::cout << "Registering OpenGL Debug callback function" << std::endl;
-glDebugMessageCallback(openglCallbackFunction, nullptr);
-glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, true);
+	std::cout << "Registering OpenGL Debug callback function" << std::endl;
+	glDebugMessageCallback(openglCallbackFunction, nullptr);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, true);
 
-/* Shader shit was here */
+	/* Shader shit was here */
 
-glEnable(GL_BLEND);
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 return 0;
 }
@@ -294,6 +294,7 @@ void update() {
 		initAliens();
 	}
 	//barrier_arr[0].rotate(0.0f, 0.0f, 0.0f, 0.0f);
+
 }
 
 void alienShoot() {
@@ -380,23 +381,23 @@ void render() {
 	SDL_GL_SwapWindow(win);
 }
 
-bool checkCollisions(alien &al, bullet &bl) {
-
+template <typename A, typename B>
+bool checkCollisions(A a, B b) {
 	float left_src, left_dst;
 	float right_src, right_dst;
 	float top_src, top_dst;
 	float bottom_src, bottom_dst;
 
 
-	left_src = bl.position.x;
-	right_src = bl.position.x + bl.h;
-	top_src = bl.position.y;
-	bottom_src = bl.position.y + bl.w;
+	left_src = a.position.x;
+	right_src = a.position.x + a.h;
+	top_src = a.position.y;
+	bottom_src = a.position.y + a.w;
 
-	left_dst = al.position.x;
-	right_dst = al.position.x + al.h;
-	top_dst = al.position.y;
-	bottom_dst = al.position.y + al.w;
+	left_dst = b.position.x;
+	right_dst = b.position.x + b.h;
+	top_dst = b.position.y;
+	bottom_dst = b.position.y + b.w;
 
 	if (bottom_src <= top_dst) {
 		return false;
@@ -513,6 +514,7 @@ int main(int argc, char *argv[]) {
 		alienShoot();
 		if (frametime >= 0.0166f) {
 			update();
+
 			frametime = 0.0f;
 		}
 
@@ -524,6 +526,36 @@ int main(int argc, char *argv[]) {
 				bullets->resetPositionX(player->position, SDLK_UP);
 			}
 		}
+
+		for (int i = 0; i < barrier_arr.size(); i++) {						/* Barrier <-> PlayerBullet collision */
+			if (checkCollisions(barrier_arr[i], *bullets)) {
+				barrier_arr[i].barrierIndex++;
+				if (barrier_arr[i].barrierIndex == 3) {
+					barrier_arr.erase(barrier_arr.begin() + i);
+				}
+				else {
+					barrier_arr[i].breakBarrier();//"broken_" + barrier_arr[i].barrierIndex);
+					bullets->isActive = false;
+					bullets->resetPositionY();
+					bullets->resetPositionX(player->position, SDLK_UP);
+				}
+			}
+			if (checkCollisions(barrier_arr[i], *alienBullet)) {
+				barrier_arr[i].barrierIndex++;
+				if (barrier_arr[i].barrierIndex == 3) {
+					barrier_arr.erase(barrier_arr.begin() + i);
+				}
+				else {
+					barrier_arr[i].breakBarrier();//"broken_" + barrier_arr[i].barrierIndex);
+					alienBullet->isActive = false;
+					alienBullet->resetPositionAL();
+				}
+			}
+		}
+		if (checkCollisions(*alienBullet, *player)) {
+			std::cout << "player hit" << std::endl;
+		}
+
 
 
 		render();

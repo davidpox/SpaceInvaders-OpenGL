@@ -4,6 +4,8 @@
 
 PlayerShip::PlayerShip()
 {
+	h = 0.05f;
+	w = 0.1f;
 }
 
 
