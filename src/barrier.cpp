@@ -27,6 +27,7 @@ GLuint barrier::createSprite(std::string pic) {
 
 	std::string filename = "bin/assets/" + pic + ".png";
 	img = IMG_Load(filename.c_str());
+	std::cout << "loaded::" + filename << std::endl;
 	if (img == NULL) {
 		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;
 		return (GLuint)1;
@@ -147,16 +148,8 @@ void barrier::breakBarrier() {
 	img = IMG_Load(filename.c_str());
 	if (img == NULL) {
 		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;
-	}
-
-	
+	}	
 	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
 	glGenerateMipmap(GL_TEXTURE_2D);
 

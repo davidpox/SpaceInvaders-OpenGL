@@ -437,32 +437,35 @@ void setupAliens() {
 		xOffset += 0.15f;
 	}
 }
-void setupBarriers() {
+void setupBarriers(float xOffset, int it) {
 
 	for (int i = 0; i < 5; i++) {
 		barrier_arr.push_back(barrier());
 	}
 
-	for (int i = 0; i < barrier_arr.size(); i++) {
-		vao_arr.push_back(barrier_arr[i].createSprite("t_" + std::to_string(i + 1)));
+	for (int i = 0; i < 5; i++) {
+		vao_arr.push_back(barrier_arr[i + (it * 5)].createSprite("t_" + std::to_string(i + 1)));
 	}
 
-	for (int i = 0; i < barrier_arr.size(); i++) {
+	for (int i = 0; i < 5; i++) {
 		switch (i) {
+		case 0:
+			barrier_arr[i + (it * 5)].arrange(0.0f + xOffset, 0.0f);
+			break;
 		case 1:
-			barrier_arr[1].arrange(0.1f, 0.0f);
+			barrier_arr[i + (it * 5)].arrange(0.1f + xOffset, 0.0f);
 			break;
 		case 2:
-			barrier_arr[2].arrange(0.2f, 0.0f);
+			barrier_arr[i + (it * 5)].arrange(0.2f + xOffset, 0.0f);
 			break;
 		case 3:
-			barrier_arr[3].arrange(0.0f, -0.1f);
+			barrier_arr[i + (it * 5)].arrange(0.0f + xOffset, -0.1f);
 			break;
 		case 4:
-			barrier_arr[4].arrange(0.2f, -0.1f);
+			barrier_arr[i + (it * 5)].arrange(0.2f + xOffset, -0.1f);
 			break;
 		default:
-			std::cout << "Switch error" << std::endl;
+			std::cout << "Switch error: " << i <<  std::endl;
 			break;
 		}
 	}
@@ -475,7 +478,6 @@ int main(int argc, char *argv[]) {
 	int prevtime = 0;
 	int currenttime = 0;
 	float deltatime = 0.0f;
-	int moveTimer = 0;
 
 	if (init() == 1) {
 		std::cout << "Could not init" << std::endl;
@@ -486,7 +488,9 @@ int main(int argc, char *argv[]) {
 	vao_arr.push_back(bullets->createSprite("bullet"));
 	setupAliens();
 	vao_arr.push_back(alienBullet->createSprite("bullet2"));
-	setupBarriers();
+	setupBarriers(0.0f, 0);
+	setupBarriers(0.65f, 1);
+	setupBarriers(1.3f, 2);
 
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
@@ -512,7 +516,7 @@ int main(int argc, char *argv[]) {
 			frametime = 0.0f;
 		}
 
-		for (int i = 0; i < alien_arr.size(); i++) {
+		for (int i = 0; i < alien_arr.size(); i++) {						/* Alien <-> PlayerBullet collision */
 			if (checkCollisions(alien_arr[i], *bullets)) {
 				alien_arr.erase(alien_arr.begin() + i);
 				bullets->isActive = false;
