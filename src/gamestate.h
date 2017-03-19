@@ -9,6 +9,7 @@ public:
 	int alienMoveCounter;
 	bool isMovingLeft;
 	bool isGameRunning;
+	int playerscore;
 
 
 };

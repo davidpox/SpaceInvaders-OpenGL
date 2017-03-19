@@ -15,6 +15,7 @@
 #include "alien.h"
 #include "gamestate.h"
 #include "barrier.h"
+#include "TextHandler.h"
 
 // // - OpenGL Mathematics - https://glm.g-truc.net/
 #define GLM_FORCE_RADIANS // force glm to use radians
@@ -34,6 +35,7 @@ bullet *alienBullet = new bullet("alien");
 alien *aliens = new alien();
 shotHandler *sh = new shotHandler();
 gamestate *gs = new gamestate();
+TextHandler *txt = new TextHandler();
 
 
 std::vector<GLuint> sprog_arr;
@@ -214,11 +216,12 @@ void initAliens() {
 	}
 }
 
+void updateScore() {
+	std::string text = "SCORE: " + std::to_string(gs->playerscore);
+	vao_arr[73] = txt->createSprite(text, 24);
+}
+
 void moveAliens() {
-
-	/* Honestly have no idea what the fuck is happening here. It's 2:59AM. Lord help me */
-			/* Update at 1:48PM - I'm an idiot. FIXED. */
-
 	if (!gs->isMovingLeft) {
 		if (gs->alienMoveCounter < 3) {
 			for (int i = 0; i < alien_arr.size(); i++) {
@@ -257,13 +260,10 @@ void moveAliens() {
 
 
 void update() {
-	if (bullets != nullptr) {
-		if (bullets->isActive) {
-			bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.03f, 0.0f));
-			bullets->position.y += 0.03f;
-			bullets->distTravelled.y += 0.03f;
-		}
-
+	if (bullets->isActive) {
+		bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.03f, 0.0f));
+		bullets->position.y += 0.03f;
+		bullets->distTravelled.y += 0.03f;
 	}
 
 	if (bullets->position[1] >= 1.0f) {
@@ -377,6 +377,15 @@ void render() {
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
+
+	glUseProgram(sprog_arr[5]);
+	GLint textTransLoc = glGetUniformLocation(sprog_arr[5], "trans");
+	glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(txt->_transTranslate * txt->_transRotate * txt->_transScale));
+	glBindTexture(GL_TEXTURE_2D, txt->texture);
+	glBindVertexArray(vao_arr[73]);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
 
 	SDL_GL_SwapWindow(win);
 }
@@ -492,15 +501,19 @@ int main(int argc, char *argv[]) {
 	setupBarriers(0.0f, 0);
 	setupBarriers(0.65f, 1);
 	setupBarriers(1.3f, 2);
+	vao_arr.push_back(txt->createSprite("SCORE: 0", 24));
 
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
 	sprog_arr.push_back(alien_arr[0].createShaderProgram());
 	sprog_arr.push_back(alienBullet->createShaderProgram());
 	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
+	sprog_arr.push_back(txt->createShaderProgram());
 
 
 	alienBullet->arrangeToAlien();
+
+	std::cout << "VAO_ARR SIZE: " << vao_arr.size() << std::endl;
 	
 	std::cout << "OPENGL Version: " << glGetString(GL_VERSION) << std::endl;
 	while (gs->isGameRunning) {
@@ -524,6 +537,8 @@ int main(int argc, char *argv[]) {
 				bullets->isActive = false;
 				bullets->resetPositionY();
 				bullets->resetPositionX(player->position, SDLK_UP);
+				gs->playerscore += 100;
+				updateScore();
 			}
 		}
 

@@ -8,6 +8,7 @@ gamestate::gamestate()
 	alienMoveCounter = 0;
 	isGameRunning = false;
 	isMovingLeft = false;
+	playerscore = 0;
 }
 
 
