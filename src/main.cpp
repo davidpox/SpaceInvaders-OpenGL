@@ -277,7 +277,7 @@ void update() {
 		alienBullet->position.y -= 0.02f;
 		alienBullet->distTravelled.y -= 0.02f;
 	}
-	if (alienBullet->position.y <= -1.0f) {
+	if (alienBullet->position.y <= -0.8f) {
 		alienBullet->isActive = false;
 		alienBullet->resetPositionAL();
 	}

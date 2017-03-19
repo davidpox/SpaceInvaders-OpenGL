@@ -27,7 +27,7 @@ public:
 	void resetPositionY();
 	void resetPositionAL();
 
-	glm::vec3 position = {0.0f, -0.975f, 0.0f};
+	glm::vec3 position = {0.0f, -0.775f, 0.0f};
 	glm::vec3 distTravelled = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 alTravel = { 0.0f, 0.0f, 0.0f }; 
 	glm::mat4 _transRotate, _transTranslate, _transScale;

@@ -16,10 +16,10 @@ PlayerShip::~PlayerShip()
 GLuint PlayerShip::createSprite(std::string pic) {
 	GLfloat verts[] = {
 		// Positions          // Texture Coords 
-		-0.05f, -1.0f, 0.0f,		0.0f, 0.0f,   // Bottom Left
-		0.05f, -1.0f, 0.0f,		1.0f, 0.0f,   // Bottom Right
-		0.05f,  -0.95f, 0.0f,		1.0f, 1.0f,   // Top Right
-		-0.05f,  -0.95f, 0.0f,	0.0f, 1.0f    // Top Left 
+		-0.05f, -0.8f, 0.0f,		0.0f, 0.0f,   // Bottom Left
+		0.05f, -0.8f, 0.0f,		1.0f, 0.0f,   // Bottom Right
+		0.05f,  -0.75f, 0.0f,		1.0f, 1.0f,   // Top Right
+		-0.05f,  -0.75f, 0.0f,	0.0f, 1.0f    // Top Left 
 	};
 	GLuint ind[] = {
 		0, 1, 3,
