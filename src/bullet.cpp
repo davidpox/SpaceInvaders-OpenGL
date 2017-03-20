@@ -172,7 +172,6 @@ void bullet::resetPositionX(glm::vec3 playerPos, SDL_Keycode dir) {
 	if (moved && !isActive) {
 		_transTranslate = glm::translate(_transTranslate, glm::vec3(distTravelled[0], 0.0f, 0.0f));
 		position[0] += distTravelled[0];
-	//	std::cout << "translated by " << distTravelled[0] << std::endl;
 		distTravelled[0] = 0.0f;
 		moved = false;
 	}
@@ -199,7 +198,8 @@ void bullet::resetPositionY() {
 }
 
 void bullet::arrangeToAlien() {
-	_transTranslate = glm::translate(_transTranslate, glm::vec3(0.0f, 0.9f, 0.0f));
+	_transTranslate = glm::translate(_transTranslate, glm::vec3(0.0f, 0.775f, 0.0f));
+	position.x += 0.775f;
 }
 
 void bullet::resetPositionAL() {

@@ -9,6 +9,8 @@ gamestate::gamestate()
 	isGameRunning = false;
 	isMovingLeft = false;
 	playerscore = 0;
+	playerlives = 3;
+	gameover = false;
 }
 
 

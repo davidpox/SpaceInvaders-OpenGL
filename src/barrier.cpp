@@ -145,18 +145,17 @@ void barrier::breakBarrier() {
 	img = IMG_Load(filename.c_str());
 	if (img == NULL) {
 		std::cout << "BARRIER IMAGE LOAD:: " << IMG_GetError() << std::endl;
-	}	
+	}
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	SDL_FreeSurface(img);
-
 }
 
 void barrier::arrange(float xOffset, float yOffset) {
 	_transTranslate = glm::translate(_transTranslate, glm::vec3(xOffset, yOffset, 0.0f));
-	position[0] += xOffset;
-	position[1] += yOffset;
+	position.x += xOffset;
+	position.y += yOffset;
 }

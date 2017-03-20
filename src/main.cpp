@@ -35,13 +35,14 @@ bullet *alienBullet = new bullet("alien");
 alien *aliens = new alien();
 shotHandler *sh = new shotHandler();
 gamestate *gs = new gamestate();
-TextHandler *txt = new TextHandler();
 
 
 std::vector<GLuint> sprog_arr;
 std::vector<GLuint> vao_arr;
 std::vector<alien> alien_arr;
 std::vector<barrier> barrier_arr;
+std::vector<TextHandler *> text_arr;
+std::vector<PlayerShip *> lives_arr;
 
 bool isGameRunning;
 
@@ -115,6 +116,13 @@ static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint i
 }
 
 int init() {
+	int screenWidth, screenHeight;
+	int winWidth, winHeight;
+	SDL_DisplayMode disp;
+
+
+
+
 	std::cout << ">> Program Revision 14 Mar 2017 <<" << std::endl;
 
 	// SDL initialise
@@ -125,13 +133,24 @@ int init() {
 	}
 	SDL_Log("SDL initialised OK!\n");
 
+	if (SDL_GetCurrentDisplayMode(0, &disp) == 0) {
+		screenWidth = disp.w;
+		screenHeight = disp.h;
+	}
+	else {
+		std::cout << "Failed to create window: " << SDL_GetError() << std::endl;
+		return 1;
+	}
+
+
 	// Window Creation
-	win = SDL_CreateWindow("Space Invaders", 500, 500, 500, 700, SDL_WINDOW_OPENGL);
+	win = SDL_CreateWindow("David Puetter; CGP2012M; PUE15564059", screenWidth/4, screenHeight/4, screenWidth/2, screenHeight/2, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if (win == nullptr) {
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
 			"SDL_CreateWindow init error: %s\n", glGetError());
 		return 1;
 	}
+	SDL_GetWindowSize(win, &winWidth, &winHeight);
 
 
 	// SDL_Image initialise
@@ -161,7 +180,14 @@ int init() {
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	glViewport(0, 100, 500, 500);
+	if (winWidth > winHeight) {
+		glViewport(winWidth/4, 0, winHeight, winHeight);
+	}
+	else {
+		glViewport(0, winHeight/4, winWidth, winWidth);
+	}
+
+	//glViewport(0, 0, 500, 500);
 
 	/* DEBUG INITIALISATION*/
 
@@ -174,9 +200,27 @@ int init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	//glOrtho(0, 0, 500, 500, -1, 1);
+
 return 0;
 }
 
+void resizeWindow() {
+	int w, h;
+	int tw, th;
+	SDL_GetWindowSize(win, &w, &h);
+
+	if (w >= h) {
+		tw = h;
+		th = h;
+	}
+	if (h > w) {
+		tw = w;
+		th = w;
+	}
+
+	glViewport(0, 0, tw, th);
+}
 
 void getInput() {
 	SDL_Event ev;
@@ -200,8 +244,19 @@ void getInput() {
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				glEnable(GL_BLEND);
 				break;
+			case SDLK_F10:
+				SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN_DESKTOP);
+				break;
+			case SDLK_F11:
+				SDL_SetWindowFullscreen(win, 0);
+				break;
 			default:
 				break;
+			}
+		}
+		if (ev.type == SDL_WINDOWEVENT) {
+			if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
+				resizeWindow();
 			}
 		}
 		if (ev.type == SDL_QUIT) {
@@ -218,7 +273,7 @@ void initAliens() {
 
 void updateScore() {
 	std::string text = "SCORE: " + std::to_string(gs->playerscore);
-	vao_arr[73] = txt->createSprite(text, 24);
+	vao_arr[73] = text_arr[0]->createSprite(text, 24);
 }
 
 void moveAliens() {
@@ -277,7 +332,7 @@ void update() {
 		alienBullet->position.y -= 0.02f;
 		alienBullet->distTravelled.y -= 0.02f;
 	}
-	if (alienBullet->position.y <= -0.8f) {
+	if (alienBullet->position.y <= -0.9f) {
 		alienBullet->isActive = false;
 		alienBullet->resetPositionAL();
 	}
@@ -323,69 +378,93 @@ void render() {
 	glClearColor(backgroundColour[0], backgroundColour[1], backgroundColour[2], backgroundColour[3]);
 	glClear(GL_COLOR_BUFFER_BIT);	//GL_COLOR_BUFFER_BIT
 
+	 
+	if (!gs->gameover) {
+		// Player
+		glUseProgram(sprog_arr[0]);
+		GLint playertransLocation = glGetUniformLocation(sprog_arr[0], "trans");
+		glUniformMatrix4fv(playertransLocation, 1, GL_FALSE, glm::value_ptr(player->_transTranslate * player->_transRotate * player->_transScale));
+		glBindTexture(GL_TEXTURE_2D, player->texture);
+		glBindVertexArray(vao_arr[0]);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 
-	// Player
-	glUseProgram(sprog_arr[0]);
-	GLint playertransLocation = glGetUniformLocation(sprog_arr[0], "trans");
-	glUniformMatrix4fv(playertransLocation, 1, GL_FALSE, glm::value_ptr(player->_transTranslate * player->_transRotate * player->_transScale));
-	glBindTexture(GL_TEXTURE_2D, player->texture);
-	glBindVertexArray(vao_arr[0]);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
+
+		if (bullets->isActive) {
+			glUseProgram(sprog_arr[1]);
+			//bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.0005f, 0.0f));
+			GLint bullettransLocation = glGetUniformLocation(sprog_arr[1], "trans");
+			glUniformMatrix4fv(bullettransLocation, 1, GL_FALSE, glm::value_ptr(bullets->_transTranslate * bullets->_transRotate * bullets->_transScale));
+
+			glBindTexture(GL_TEXTURE_2D, bullets->texture);
+			glBindVertexArray(vao_arr[1]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+		glUseProgram(sprog_arr[2]);
+
+		for (int i = 0; i < alien_arr.size(); i++) {
+			GLint alienstransLocation = glGetUniformLocation(sprog_arr[2], "trans");
+			glUniformMatrix4fv(alienstransLocation, 1, GL_FALSE, glm::value_ptr(alien_arr[i]._transTranslate * alien_arr[i]._transRotate * alien_arr[i]._transScale));
+			glBindTexture(GL_TEXTURE_2D, alien_arr[i].texture);
+			glBindVertexArray(vao_arr[i + 2]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
 
 
-	if (bullets->isActive) {
-		glUseProgram(sprog_arr[1]);
-		//bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.0005f, 0.0f));
-		GLint bullettransLocation = glGetUniformLocation(sprog_arr[1], "trans");
-		glUniformMatrix4fv(bullettransLocation, 1, GL_FALSE, glm::value_ptr(bullets->_transTranslate * bullets->_transRotate * bullets->_transScale));
+		if (alienBullet->isActive) {
+			glUseProgram(sprog_arr[3]);
+			GLint bullettransLocation = glGetUniformLocation(sprog_arr[3], "trans");
+			glUniformMatrix4fv(bullettransLocation, 1, GL_FALSE, glm::value_ptr(alienBullet->_transTranslate * alienBullet->_transRotate * alienBullet->_transScale));
+			glBindTexture(GL_TEXTURE_2D, alienBullet->texture);
+			glBindVertexArray(vao_arr[57]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
 
-		glBindTexture(GL_TEXTURE_2D, bullets->texture);
-		glBindVertexArray(vao_arr[1]);
+		glUseProgram(sprog_arr[4]);
+		for (int i = 0; i < barrier_arr.size(); i++) {
+			GLint barrierTransLoc = glGetUniformLocation(sprog_arr[4], "trans");
+			glUniformMatrix4fv(barrierTransLoc, 1, GL_FALSE, glm::value_ptr(barrier_arr[i]._transTranslate * barrier_arr[i]._transRotate * barrier_arr[i]._transScale));
+			glBindTexture(GL_TEXTURE_2D, barrier_arr[i].texture);
+			glBindVertexArray(vao_arr[i + 58]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+		glUseProgram(sprog_arr[5]);
+		for (int i = 0; i < text_arr.size() - 1; i++) {
+			GLint textTransLoc = glGetUniformLocation(sprog_arr[5], "trans");
+			glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(text_arr[i]->_transTranslate * text_arr[i]->_transRotate * text_arr[i]->_transScale));
+			glBindTexture(GL_TEXTURE_2D, text_arr[i]->texture);
+			glBindVertexArray(vao_arr[i + 73]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+		if (gs->playerlives >= 1) {
+			glUseProgram(sprog_arr[0]);
+			for (int i = 0; i < lives_arr.size(); i++) {
+				GLint textTransLoc = glGetUniformLocation(sprog_arr[0], "trans");
+				glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(lives_arr[i]->_transTranslate * lives_arr[i]->_transRotate * lives_arr[i]->_transScale));
+				glBindTexture(GL_TEXTURE_2D, lives_arr[i]->texture);
+				glBindVertexArray(vao_arr[i + 75]);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+				glBindVertexArray(0);
+			}
+		}
+	}
+	else if (gs->gameover) {
+		glUseProgram(sprog_arr[5]);
+		GLint textTransLoc = glGetUniformLocation(sprog_arr[5], "trans");
+		glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(text_arr[2]->_transTranslate * text_arr[2]->_transRotate * text_arr[2]->_transScale));
+		glBindTexture(GL_TEXTURE_2D, text_arr[2]->texture);
+		glBindVertexArray(vao_arr[78]);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
-
-	glUseProgram(sprog_arr[2]);
-
-	for (int i = 0; i < alien_arr.size(); i++) {
-		GLint alienstransLocation = glGetUniformLocation(sprog_arr[2], "trans");
-		glUniformMatrix4fv(alienstransLocation, 1, GL_FALSE, glm::value_ptr(alien_arr[i]._transTranslate * alien_arr[i]._transRotate * alien_arr[i]._transScale));
-		glBindTexture(GL_TEXTURE_2D, alien_arr[i].texture);
-		glBindVertexArray(vao_arr[i + 2]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-
-	if (alienBullet->isActive) {
-		glUseProgram(sprog_arr[3]);
-		GLint bullettransLocation = glGetUniformLocation(sprog_arr[3], "trans");
-		glUniformMatrix4fv(bullettransLocation, 1, GL_FALSE, glm::value_ptr(alienBullet->_transTranslate * alienBullet->_transRotate * alienBullet->_transScale));
-		glBindTexture(GL_TEXTURE_2D, alienBullet->texture);
-		glBindVertexArray(vao_arr[57]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	glUseProgram(sprog_arr[4]);
-	for (int i = 0; i < barrier_arr.size(); i++) {
-		GLint barrierTransLoc = glGetUniformLocation(sprog_arr[4], "trans");
-		glUniformMatrix4fv(barrierTransLoc, 1, GL_FALSE, glm::value_ptr(barrier_arr[i]._transTranslate * barrier_arr[i]._transRotate * barrier_arr[i]._transScale));
-		glBindTexture(GL_TEXTURE_2D, barrier_arr[i].texture);
-		glBindVertexArray(vao_arr[i + 58]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	glUseProgram(sprog_arr[5]);
-	GLint textTransLoc = glGetUniformLocation(sprog_arr[5], "trans");
-	glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(txt->_transTranslate * txt->_transRotate * txt->_transScale));
-	glBindTexture(GL_TEXTURE_2D, txt->texture);
-	glBindVertexArray(vao_arr[73]);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
 
 	SDL_GL_SwapWindow(win);
 }
@@ -481,6 +560,46 @@ void setupBarriers(float xOffset, int it) {
 	}
 }
 
+void setupEntities() {
+	text_arr.push_back(new TextHandler());
+	text_arr.push_back(new TextHandler());
+	text_arr.push_back(new TextHandler());
+
+	lives_arr.push_back(new PlayerShip());
+	lives_arr.push_back(new PlayerShip());
+	lives_arr.push_back(new PlayerShip());
+
+	vao_arr.push_back(player->createSprite("player"));
+	vao_arr.push_back(bullets->createSprite("bullet"));
+	setupAliens();
+	vao_arr.push_back(alienBullet->createSprite("bullet2"));
+	setupBarriers(0.0f, 0);
+	setupBarriers(0.65f, 1);
+	setupBarriers(1.3f, 2);
+	vao_arr.push_back(text_arr[0]->createSprite("SCORE: 0", 24));
+	vao_arr.push_back(text_arr[1]->createSprite("LIVES: ", 24));
+	vao_arr.push_back(lives_arr[0]->createSprite("player"));
+	vao_arr.push_back(lives_arr[1]->createSprite("player"));
+	vao_arr.push_back(lives_arr[2]->createSprite("player"));
+	vao_arr.push_back(text_arr[2]->createSprite("GAME OVER!", 48));
+
+	sprog_arr.push_back(player->createShaderProgram());
+	sprog_arr.push_back(bullets->createShaderProgram());
+	sprog_arr.push_back(alien_arr[0].createShaderProgram());
+	sprog_arr.push_back(alienBullet->createShaderProgram());
+	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
+	sprog_arr.push_back(text_arr[0]->createShaderProgram());
+
+
+	alienBullet->arrangeToAlien();
+	text_arr[1]->_transTranslate = glm::translate(text_arr[1]->_transTranslate, glm::vec3(1.0f, 0.0f, 0.0f));
+	text_arr[2]->_transTranslate = glm::translate(text_arr[2]->_transTranslate, glm::vec3(1.0f, 0.9f, 0.0f));
+
+	lives_arr[0]->_transTranslate = glm::translate(lives_arr[0]->_transTranslate, glm::vec3(0.5f, -0.175f, 0.0f));
+	lives_arr[1]->_transTranslate = glm::translate(lives_arr[1]->_transTranslate, glm::vec3(0.65f, -0.175f, 0.0f));
+	lives_arr[2]->_transTranslate = glm::translate(lives_arr[2]->_transTranslate, glm::vec3(0.8f, -0.175f, 0.0f));
+}
+
 int main(int argc, char *argv[]) {
 
 	gs->isGameRunning = true;
@@ -494,27 +613,10 @@ int main(int argc, char *argv[]) {
 		system("PAUSE");
 		return 1;
 	}
-	vao_arr.push_back(player->createSprite("player"));
-	vao_arr.push_back(bullets->createSprite("bullet"));
-	setupAliens();
-	vao_arr.push_back(alienBullet->createSprite("bullet2"));
-	setupBarriers(0.0f, 0);
-	setupBarriers(0.65f, 1);
-	setupBarriers(1.3f, 2);
-	vao_arr.push_back(txt->createSprite("SCORE: 0", 24));
 
-	sprog_arr.push_back(player->createShaderProgram());
-	sprog_arr.push_back(bullets->createShaderProgram());
-	sprog_arr.push_back(alien_arr[0].createShaderProgram());
-	sprog_arr.push_back(alienBullet->createShaderProgram());
-	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
-	sprog_arr.push_back(txt->createShaderProgram());
+	setupEntities();
 
 
-	alienBullet->arrangeToAlien();
-
-	std::cout << "VAO_ARR SIZE: " << vao_arr.size() << std::endl;
-	
 	std::cout << "OPENGL Version: " << glGetString(GL_VERSION) << std::endl;
 	while (gs->isGameRunning) {
 		prevtime = currenttime;
@@ -555,28 +657,42 @@ int main(int argc, char *argv[]) {
 					bullets->resetPositionX(player->position, SDLK_UP);
 				}
 			}
+		}
+		for (int i = 0; i < barrier_arr.size(); i++) {
 			if (checkCollisions(barrier_arr[i], *alienBullet)) {
 				barrier_arr[i].barrierIndex++;
 				if (barrier_arr[i].barrierIndex == 3) {
 					barrier_arr.erase(barrier_arr.begin() + i);
 				}
 				else {
-					barrier_arr[i].breakBarrier();//"broken_" + barrier_arr[i].barrierIndex);
+					barrier_arr[i].breakBarrier();
 					alienBullet->isActive = false;
 					alienBullet->resetPositionAL();
 				}
 			}
 		}
 		if (checkCollisions(*alienBullet, *player)) {
-			std::cout << "player hit" << std::endl;
+			gs->playerlives--;
+			if (gs->playerlives > 0) {
+				lives_arr.pop_back();
+			}
+
+			alienBullet->isActive = false;
+			alienBullet->resetPositionAL();
+			if (gs->playerlives == 0) {
+				gs->gameover = true;
+			}
+		}
+		for (int i = 0; i < alien_arr.size(); i++) {					/* Alien <-> Barrier Detecction */
+			for (int j = 0; j < barrier_arr.size(); j++) {
+				if (checkCollisions(alien_arr[i], barrier_arr[j])) {
+					gs->gameover = true;
+				}
+			}
 		}
 
 
-
 		render();
-
-
-		//checkErrors();
 	}
 
 	// Clean up
@@ -588,6 +704,3 @@ int main(int argc, char *argv[]) {
 	SDL_Quit();
 	return 0;
 }
-
-
-
