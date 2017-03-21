@@ -16,6 +16,7 @@
 #include "gamestate.h"
 #include "barrier.h"
 #include "TextHandler.h"
+#include "Background.h"
 
 // // - OpenGL Mathematics - https://glm.g-truc.net/
 #define GLM_FORCE_RADIANS // force glm to use radians
@@ -43,6 +44,7 @@ std::vector<alien> alien_arr;
 std::vector<barrier> barrier_arr;
 std::vector<TextHandler *> text_arr;
 std::vector<PlayerShip *> lives_arr;
+std::vector<Background> bg_arr;
 
 bool isGameRunning;
 
@@ -119,11 +121,6 @@ int init() {
 	int screenWidth, screenHeight;
 	int winWidth, winHeight;
 	SDL_DisplayMode disp;
-
-
-
-
-	std::cout << ">> Program Revision 14 Mar 2017 <<" << std::endl;
 
 	// SDL initialise
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -231,6 +228,8 @@ void getInput() {
 			case SDLK_LEFT:
 			case SDLK_RIGHT:
 				player->movePlayer(ev.key.keysym.sym);
+				bg_arr[0].moveBG(ev.key.keysym.sym);
+				bg_arr[1].moveBG(ev.key.keysym.sym);
 				bullets->resetPositionX(player->position, ev.key.keysym.sym);
 				break;
 			case SDLK_SPACE:
@@ -458,6 +457,18 @@ void render() {
 
 	 
 	if (!gs->gameover) {
+		glUseProgram(sprog_arr[6]);
+		for (int i = 0; i < bg_arr.size(); i++) {
+			GLint bgTransLocation = glGetUniformLocation(sprog_arr[6], "trans");
+			glUniformMatrix4fv(bgTransLocation, 1, GL_FALSE, glm::value_ptr(bg_arr[i]._transTranslate * bg_arr[i]._transRotate * bg_arr[i]._transScale));
+			glBindTexture(GL_TEXTURE_2D, bg_arr[i].texture);
+			glBindVertexArray(vao_arr[i + 79]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+
+
 		// Player
 		glUseProgram(sprog_arr[0]);
 		GLint playertransLocation = glGetUniformLocation(sprog_arr[0], "trans");
@@ -648,6 +659,10 @@ void setupEntities() {
 	lives_arr.push_back(new PlayerShip());
 	lives_arr.push_back(new PlayerShip());
 
+	bg_arr.push_back(Background(0.005f));
+	bg_arr.push_back(Background(0.01f));
+
+
 	vao_arr.push_back(player->createSprite("player"));
 	vao_arr.push_back(bullets->createSprite("bullet"));
 	setupAliens();
@@ -661,6 +676,8 @@ void setupEntities() {
 	vao_arr.push_back(lives_arr[1]->createSprite("player"));
 	vao_arr.push_back(lives_arr[2]->createSprite("player"));
 	vao_arr.push_back(text_arr[2]->createSprite("GAME OVER!", 48));
+	vao_arr.push_back(bg_arr[0].createSprite("background_bottom"));
+	vao_arr.push_back(bg_arr[1].createSprite("background_top"));
 
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
@@ -668,6 +685,7 @@ void setupEntities() {
 	sprog_arr.push_back(alienBullet->createShaderProgram());
 	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
 	sprog_arr.push_back(text_arr[0]->createShaderProgram());
+	sprog_arr.push_back(bg_arr[0].createShaderProgram());
 
 
 	alienBullet->arrangeToAlien();
