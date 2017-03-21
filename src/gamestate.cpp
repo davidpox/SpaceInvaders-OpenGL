@@ -11,6 +11,11 @@ gamestate::gamestate()
 	playerscore = 0;
 	playerlives = 3;
 	gameover = false;
+
+	alienShootTimer = 0;
+	barricadeTimer = 0;
+	alienMoveSpeed = 1.0f;
+	alienAnimTimer = 0;
 }
 
 

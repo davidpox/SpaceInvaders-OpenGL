@@ -280,16 +280,21 @@ void moveAliens() {
 	if (!gs->isMovingLeft) {
 		if (gs->alienMoveCounter < 3) {
 			for (int i = 0; i < alien_arr.size(); i++) {
-				alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.1f, 0.0f, 0.0f));
-				alien_arr[i].position.x += 0.1f;
+				if (!alien_arr[i].isDead) {
+					alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.1f, 0.0f, 0.0f));
+					alien_arr[i].position.x += 0.1f;
+				}
 			}
 			gs->alienMoveCounter++;
 		}
 		else if (gs->alienMoveCounter == 3) {
 			for (int i = 0; i < alien_arr.size(); i++) {
-				alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.0f, -0.1f, 0.0f));
-				alien_arr[i].position.y -= 0.1f;
+				if (!alien_arr[i].isDead) {
+					alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.0f, -0.1f, 0.0f));
+					alien_arr[i].position.y -= 0.1f;
+				}
 			}
+			gs->alienMoveSpeed += 0.10f;
 			gs->alienMoveCounter = 0;
 			gs->isMovingLeft = true;
 		}
@@ -297,59 +302,25 @@ void moveAliens() {
 	else if (gs->isMovingLeft) {
 		if (gs->alienMoveCounter < 3) {
 			for (int i = 0; i < alien_arr.size(); i++) {
-				alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(-0.1f, 0.0f, 0.0f));
-				alien_arr[i].position.x -= 0.1f;
+				if (!alien_arr[i].isDead) {
+					alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(-0.1f, 0.0f, 0.0f));
+					alien_arr[i].position.x -= 0.1f;
+				}
 			}
 			gs->alienMoveCounter++;
 		}
 		else if (gs->alienMoveCounter == 3) {
 			for (int i = 0; i < alien_arr.size(); i++) {
-				alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.0f, -0.1f, 0.0f));
-				alien_arr[i].position.y -= 0.1f;
+				if (!alien_arr[i].isDead) {
+					alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3(0.0f, -0.1f, 0.0f));
+					alien_arr[i].position.y -= 0.1f;
+				}
 			}
+			gs->alienMoveSpeed += 0.10f;
 			gs->alienMoveCounter = 0;
 			gs->isMovingLeft = false;
 		}
 	}
-}
-
-
-void update() {
-	if (bullets->isActive) {
-		bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.03f, 0.0f));
-		bullets->position.y += 0.03f;
-		bullets->distTravelled.y += 0.03f;
-	}
-
-	if (bullets->position[1] >= 1.0f) {
-		bullets->isActive = false;
-		bullets->resetPositionY();
-		bullets->resetPositionX(player->position, SDLK_UP);
-	}
-
-	if (alienBullet->isActive) {
-		alienBullet->_transTranslate = glm::translate(alienBullet->_transTranslate, glm::vec3(0.0f, -0.02f, 0.0f));
-		alienBullet->position.y -= 0.02f;
-		alienBullet->distTravelled.y -= 0.02f;
-	}
-	if (alienBullet->position.y <= -0.9f) {
-		alienBullet->isActive = false;
-		alienBullet->resetPositionAL();
-	}
-
-	if (gs->alienMoveTimer == 120) {
-		moveAliens();
-		gs->alienMoveTimer = 0;
-	}
-	else {
-		gs->alienMoveTimer++;
-	}
-
-	if (alien_arr.size() == 0) {
-		initAliens();
-	}
-	//barrier_arr[0].rotate(0.0f, 0.0f, 0.0f, 0.0f);
-
 }
 
 void alienShoot() {
@@ -368,9 +339,114 @@ void alienShoot() {
 			std::cout << "ERR ON ALIENSHOOT IT" << std::endl;
 		}
 	}
-
 }
 
+void degradebarrier() {
+	int barrier = glm::linearRand(0, (int)barrier_arr.size());
+
+	barrier_arr[barrier].barrierIndex++;
+	if (barrier_arr[barrier].barrierIndex == 3) {
+		barrier_arr.erase(barrier_arr.begin() + barrier);
+	}
+	else {
+		barrier_arr[barrier].breakBarrier();
+	}
+}
+
+void update() {
+	if (bullets->isActive) {
+		bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.06f, 0.0f));
+		bullets->position.y += 0.06f;
+		bullets->distTravelled.y += 0.06f;
+	}
+
+	if (bullets->position[1] >= 1.0f) {
+		bullets->isActive = false;
+		bullets->resetPositionY();
+		bullets->resetPositionX(player->position, SDLK_UP);
+	}
+
+	if (alienBullet->isActive) {
+		alienBullet->_transTranslate = glm::translate(alienBullet->_transTranslate, glm::vec3(0.0f, -0.04f, 0.0f));
+		alienBullet->position.y -= 0.04f;
+		alienBullet->distTravelled.y -= 0.04f;
+	}
+	if (alienBullet->position.y <= -0.9f) {
+		alienBullet->isActive = false;
+		alienBullet->resetPositionAL();
+	}
+
+	if (gs->alienMoveTimer == (int)(120 / gs->alienMoveSpeed)) {
+		moveAliens();
+		for (int i = 0; i < alien_arr.size(); i++) {
+			if (alien_arr[i].currentAnimState == 2) {
+				alien_arr[i].currentAnimState = 1;
+				alien_arr[i].changeTexture();
+			}
+			else if (alien_arr[i].currentAnimState == 1) {
+				alien_arr[i].currentAnimState = 2;
+				alien_arr[i].changeTexture();
+			}
+		}
+
+
+		gs->alienMoveTimer = 0;
+	}
+	else {
+		gs->alienMoveTimer++;
+	}
+
+	if (alien_arr.size() == 0) {
+		initAliens();
+	}
+
+	//int rnd = glm::linearRand(1, 3);
+
+	if (gs->alienShootTimer == gs->rndShot * 60) {
+		alienShoot();
+		gs->alienShootTimer = 0;
+		gs->rndShot = glm::linearRand(1, 3);
+
+	}
+	gs->alienShootTimer++;
+	
+	if (gs->barricadeTimer == 300) {
+		degradebarrier();
+		gs->barricadeTimer = 0;
+	}
+	gs->barricadeTimer++;
+
+
+
+
+
+
+
+
+
+
+	/* Tried to make Aliens spin off when killed. shit aint working. ill fix one day. */
+
+	/*for (int i = 0; i < alien_arr.size(); i++) {
+		if (alien_arr[i].isDead) {
+			glm::highp_vec3 start = { -0.875f, 0.915f, 0.0f };
+
+			float xdist = glm::distance(start.x, alien_arr[i].position.x);
+			float ydist = glm::distance(start.y, alien_arr[i].position.y);
+
+			alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ -xdist, ydist, 0.0f });
+	
+			alien_arr[i]._transRotate = glm::rotate(alien_arr[i]._transRotate, glm::radians(0.1f), glm::vec3{ 0.0f, 0.0f, 1.0f });
+
+			alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ xdist, -ydist, 0.0f });
+
+		
+
+			std::cout << "X : " << xdist << " | Y : " << ydist << std::endl;
+		}
+	}*/
+
+}
 
 void render() {
 
@@ -615,7 +691,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	setupEntities();
-
+	gs->rndShot = glm::linearRand(1, 3);
 
 	std::cout << "OPENGL Version: " << glGetString(GL_VERSION) << std::endl;
 	while (gs->isGameRunning) {
@@ -626,7 +702,7 @@ int main(int argc, char *argv[]) {
 
 		getInput();
 
-		alienShoot();
+		//alienShoot();
 		if (frametime >= 0.0166f) {
 			update();
 

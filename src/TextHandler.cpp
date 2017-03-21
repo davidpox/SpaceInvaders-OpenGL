@@ -46,6 +46,7 @@ GLuint TextHandler::createSprite(std::string text, int fontsize) {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	SDL_FreeSurface(fSurf);
+	TTF_CloseFont(font);
 
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
