@@ -294,7 +294,7 @@ void moveAliens() {
 					alien_arr[i].position.y -= 0.1f;
 				}
 			}
-			gs->alienMoveSpeed += 0.10f;
+			gs->alienMoveSpeed += 0.15f;
 			gs->alienMoveCounter = 0;
 			gs->isMovingLeft = true;
 		}
@@ -316,7 +316,7 @@ void moveAliens() {
 					alien_arr[i].position.y -= 0.1f;
 				}
 			}
-			gs->alienMoveSpeed += 0.10f;
+			gs->alienMoveSpeed += 0.15f;
 			gs->alienMoveCounter = 0;
 			gs->isMovingLeft = false;
 		}
@@ -342,22 +342,24 @@ void alienShoot() {
 }
 
 void degradebarrier() {
-	int barrier = glm::linearRand(0, (int)barrier_arr.size());
+	if ((int)barrier_arr.size() > 1) {
+		int barrier = glm::linearRand(0, (int)barrier_arr.size());
 
-	barrier_arr[barrier].barrierIndex++;
-	if (barrier_arr[barrier].barrierIndex == 3) {
-		barrier_arr.erase(barrier_arr.begin() + barrier);
-	}
-	else {
-		barrier_arr[barrier].breakBarrier();
+		barrier_arr[barrier].barrierIndex++;
+		if (barrier_arr[barrier].barrierIndex == 3) {
+			barrier_arr.erase(barrier_arr.begin() + barrier);
+		}
+		else {
+			barrier_arr[barrier].breakBarrier();
+		}
 	}
 }
 
 void update() {
 	if (bullets->isActive) {
-		bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.06f, 0.0f));
-		bullets->position.y += 0.06f;
-		bullets->distTravelled.y += 0.06f;
+		bullets->_transTranslate = glm::translate(bullets->_transTranslate, glm::vec3(0.0f, 0.08f, 0.0f));
+		bullets->position.y += 0.08f;
+		bullets->distTravelled.y += 0.08f;
 	}
 
 	if (bullets->position[1] >= 1.0f) {
@@ -367,9 +369,9 @@ void update() {
 	}
 
 	if (alienBullet->isActive) {
-		alienBullet->_transTranslate = glm::translate(alienBullet->_transTranslate, glm::vec3(0.0f, -0.04f, 0.0f));
-		alienBullet->position.y -= 0.04f;
-		alienBullet->distTravelled.y -= 0.04f;
+		alienBullet->_transTranslate = glm::translate(alienBullet->_transTranslate, glm::vec3(0.0f, -0.06f, 0.0f));
+		alienBullet->position.y -= 0.06f;
+		alienBullet->distTravelled.y -= 0.06f;
 	}
 	if (alienBullet->position.y <= -0.9f) {
 		alienBullet->isActive = false;
@@ -389,7 +391,7 @@ void update() {
 			}
 		}
 
-
+		std::cout << gs->alienMoveSpeed << std::endl;
 		gs->alienMoveTimer = 0;
 	}
 	else {
@@ -397,7 +399,7 @@ void update() {
 	}
 
 	if (alien_arr.size() == 0) {
-		initAliens();
+		gs->gameover = true;
 	}
 
 	//int rnd = glm::linearRand(1, 3);
@@ -513,6 +515,7 @@ void render() {
 		glUseProgram(sprog_arr[5]);
 		for (int i = 0; i < text_arr.size() - 1; i++) {
 			GLint textTransLoc = glGetUniformLocation(sprog_arr[5], "trans");
+
 			glUniformMatrix4fv(textTransLoc, 1, GL_FALSE, glm::value_ptr(text_arr[i]->_transTranslate * text_arr[i]->_transRotate * text_arr[i]->_transScale));
 			glBindTexture(GL_TEXTURE_2D, text_arr[i]->texture);
 			glBindVertexArray(vao_arr[i + 73]);
