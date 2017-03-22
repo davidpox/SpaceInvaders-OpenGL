@@ -17,6 +17,7 @@
 #include "barrier.h"
 #include "TextHandler.h"
 #include "Background.h"
+#include "SolidWall.h"
 
 // // - OpenGL Mathematics - https://glm.g-truc.net/
 #define GLM_FORCE_RADIANS // force glm to use radians
@@ -45,6 +46,7 @@ std::vector<barrier> barrier_arr;
 std::vector<TextHandler *> text_arr;
 std::vector<PlayerShip *> lives_arr;
 std::vector<Background> bg_arr;
+std::vector<SolidWall> world_bounds;
 
 bool isGameRunning;
 
@@ -192,7 +194,6 @@ int init() {
 	glDebugMessageCallback(openglCallbackFunction, nullptr);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, true);
 
-	/* Shader shit was here */
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -545,6 +546,15 @@ void render() {
 				glBindVertexArray(0);
 			}
 		}
+
+		glUseProgram(sprog_arr[7]);
+		for (int i = 0; i < world_bounds.size(); i++) {
+			GLint boundsTransLoc = glGetUniformLocation(sprog_arr[7], "trans");
+			glUniformMatrix4fv(boundsTransLoc, 1, GL_FALSE, glm::value_ptr(world_bounds[i]._transTranslate * world_bounds[i]._transRotate * world_bounds[i]._transScale));
+			glBindVertexArray(vao_arr[i + 81]);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
 	}
 	else if (gs->gameover) {
 		glUseProgram(sprog_arr[5]);
@@ -662,6 +672,11 @@ void setupEntities() {
 	bg_arr.push_back(Background(0.005f));
 	bg_arr.push_back(Background(0.01f));
 
+	world_bounds.push_back(SolidWall());
+	world_bounds.push_back(SolidWall());
+	world_bounds.push_back(SolidWall());
+	world_bounds.push_back(SolidWall());
+
 
 	vao_arr.push_back(player->createSprite("player"));
 	vao_arr.push_back(bullets->createSprite("bullet"));
@@ -678,6 +693,10 @@ void setupEntities() {
 	vao_arr.push_back(text_arr[2]->createSprite("GAME OVER!", 48));
 	vao_arr.push_back(bg_arr[0].createSprite("background_bottom"));
 	vao_arr.push_back(bg_arr[1].createSprite("background_top"));
+	vao_arr.push_back(world_bounds[0].createSprite());
+	vao_arr.push_back(world_bounds[1].createSprite());
+	vao_arr.push_back(world_bounds[2].createSprite());
+	vao_arr.push_back(world_bounds[3].createSprite());
 
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
@@ -686,15 +705,24 @@ void setupEntities() {
 	sprog_arr.push_back(barrier_arr[0].createShaderProgram());
 	sprog_arr.push_back(text_arr[0]->createShaderProgram());
 	sprog_arr.push_back(bg_arr[0].createShaderProgram());
+	sprog_arr.push_back(world_bounds[0].createShaderProgram());
 
 
 	alienBullet->arrangeToAlien();
-	text_arr[1]->_transTranslate = glm::translate(text_arr[1]->_transTranslate, glm::vec3(1.0f, 0.0f, 0.0f));
-	text_arr[2]->_transTranslate = glm::translate(text_arr[2]->_transTranslate, glm::vec3(1.0f, 0.9f, 0.0f));
+	text_arr[0]->_transTranslate = glm::translate(text_arr[0]->_transTranslate, glm::vec3(0.05f, 0.05f, 0.0f));
+	text_arr[1]->_transTranslate = glm::translate(text_arr[1]->_transTranslate, glm::vec3(1.0f, 0.05f, 0.0f));
+	text_arr[2]->_transTranslate = glm::translate(text_arr[2]->_transTranslate, glm::vec3(0.7f, 0.9f, 0.0f));
 
-	lives_arr[0]->_transTranslate = glm::translate(lives_arr[0]->_transTranslate, glm::vec3(0.5f, -0.175f, 0.0f));
-	lives_arr[1]->_transTranslate = glm::translate(lives_arr[1]->_transTranslate, glm::vec3(0.65f, -0.175f, 0.0f));
-	lives_arr[2]->_transTranslate = glm::translate(lives_arr[2]->_transTranslate, glm::vec3(0.8f, -0.175f, 0.0f));
+	lives_arr[0]->_transTranslate = glm::translate(lives_arr[0]->_transTranslate, glm::vec3(0.5f, -0.12f, 0.0f));
+	lives_arr[1]->_transTranslate = glm::translate(lives_arr[1]->_transTranslate, glm::vec3(0.65f, -0.12f, 0.0f));
+	lives_arr[2]->_transTranslate = glm::translate(lives_arr[2]->_transTranslate, glm::vec3(0.8f, -0.12f, 0.0f));
+
+	world_bounds[0]._transRotate = glm::rotate(world_bounds[0]._transRotate, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	world_bounds[0]._transTranslate = glm::translate(world_bounds[0]._transTranslate, glm::vec3(0.0f, 1.0f, 0.0f));
+	world_bounds[1]._transRotate = glm::rotate(world_bounds[1]._transRotate, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	world_bounds[1]._transTranslate = glm::translate(world_bounds[1]._transTranslate, glm::vec3(0.0f, -1.0f, 0.0f));
+	world_bounds[2]._transTranslate = glm::translate(world_bounds[2]._transTranslate, glm::vec3(-1.0f, 0.0f, 0.0f));
+	world_bounds[3]._transTranslate = glm::translate(world_bounds[3]._transTranslate, glm::vec3(1.0f, 0.0f, 0.0f));
 }
 
 int main(int argc, char *argv[]) {
