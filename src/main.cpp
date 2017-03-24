@@ -147,13 +147,15 @@ void resizeWindow() {
 	if (w >= h) {
 		tw = h;
 		th = h;
+		glViewport(w/4, 0, tw, th);
 	}
 	if (h > w) {
 		tw = w;
 		th = w;
+		glViewport(0, h/4, tw, th);
 	}
 
-	glViewport(0, 0, tw, th);
+	//glViewport(0, 0, tw, th);
 	gs->windowHeight = th;
 	gs->windowWidth = tw;
 }
@@ -368,24 +370,24 @@ void update() {
 
 	/* Tried to make Aliens spin off when killed. shit aint working. ill fix one day. */
 
-	for (int i = 0; i < alien_arr.size(); i++) {
-		if (alien_arr[i].isDead) {
-			glm::highp_vec3 start = { -0.875f, 0.915f, 0.0f };
+	//for (int i = 0; i < alien_arr.size(); i++) {
+	//	if (alien_arr[i].isDead) {
+	//		glm::highp_vec3 start = { -0.875f, 0.915f, 0.0f };
 
-			float xdist = glm::distance(start.x, alien_arr[i].position.x);
-			float ydist = glm::distance(start.y, alien_arr[i].position.y);
+	//		float xdist = glm::distance(start.x, alien_arr[i].position.x);
+	//		float ydist = glm::distance(start.y, alien_arr[i].position.y);
 
-			alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ -xdist, ydist, 0.0f });
-	
-			alien_arr[i]._transRotate = glm::rotate(alien_arr[i]._transRotate, glm::radians(0.1f), glm::vec3{ 0.0f, 0.0f, 1.0f });
+	//		alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ -xdist, ydist, 0.0f });
+	//
+	//		alien_arr[i]._transRotate = glm::rotate(alien_arr[i]._transRotate, glm::radians(0.1f), glm::vec3{ 0.0f, 0.0f, 1.0f });
 
-			alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ xdist, -ydist, 0.0f });
+	//		alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ xdist, -ydist, 0.0f });
 
-		
+	//	
 
-			std::cout << "X : " << xdist << " | Y : " << ydist << std::endl;
-		}
-	}
+	//		std::cout << "X : " << xdist << " | Y : " << ydist << std::endl;
+	//	}
+	//}
 
 }
 void useVPShader() {
@@ -731,7 +733,7 @@ int main(int argc, char *argv[]) {
 
 		for (int i = 0; i < alien_arr.size(); i++) {						/* Alien <-> PlayerBullet collision */
 			if (checkCollisions(alien_arr[i], *bullets)) {
-				//alien_arr.erase(alien_arr.begin() + i);
+				alien_arr.erase(alien_arr.begin() + i);
 				bullets->isActive = false;
 				bullets->resetPositionY();
 				bullets->resetPositionX(player->position, SDLK_UP);
@@ -798,6 +800,5 @@ int main(int argc, char *argv[]) {
 	SDL_Log("Finished. Cleaning up and closing down\n");
 
 	SDL_Quit();
-	delete win;
 	return 0;
 }
