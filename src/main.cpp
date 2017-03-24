@@ -1,15 +1,15 @@
+// Basic Libraries
 #include <iostream>
 #include <vector>
+#include <windows.h>
 #include <string>
-// // GLEW - OpenGL Extension Wrangler - http://glew.sourceforge.net/
-// // NOTE: include before SDL.h
+// GLEW - must include before SDL
 #include <GL/glew.h>
-
-// SDL - Simple DirectMedia Layer - https://www.libsdl.org/
+// SDL
 #include "SDL.h"
 #include "SDL_image.h"
 #include "SDL_ttf.h"
-#include <windows.h>
+// Classes
 #include "PlayerShip.h"
 #include "bullet.h"
 #include "alien.h"
@@ -19,16 +19,12 @@
 #include "Background.h"
 #include "SolidWall.h"
 #include "camera.h"
-
-// // - OpenGL Mathematics - https://glm.g-truc.net/
+#include "shotHandler.h" 
+//GLM
 #define GLM_FORCE_RADIANS // force glm to use radians
-// // NOTE: must do before including GLM headers
-// // NOTE: GLSL uses radians, so will do the same, for consistency
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include "shotHandler.h" 
 
 SDL_Window *win = nullptr;
 SDL_GLContext mainContext;
@@ -129,14 +125,10 @@ int init() {
 		gs->windowHeight = winWidth;
 	}
 
-	//glViewport(0, 0, 500, 500);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	//glOrtho(0, 0, 500, 500, -1, 1);
-
-return 0;
+		
+	return 0;
 }
 
 void resizeWindow() {
@@ -147,15 +139,14 @@ void resizeWindow() {
 	if (w >= h) {
 		tw = h;
 		th = h;
-		glViewport(w/4, 0, tw, th);
+		glViewport(tw/4, 0, tw, th);
 	}
 	if (h > w) {
 		tw = w;
 		th = w;
-		glViewport(0, h/4, tw, th);
+		glViewport(0, th/4, tw, th);
 	}
 
-	//glViewport(0, 0, tw, th);
 	gs->windowHeight = th;
 	gs->windowWidth = tw;
 }
@@ -276,15 +267,12 @@ void alienShoot() {
 			alienBullet->_transTranslate = glm::translate(alienBullet->_transTranslate, glm::vec3(alien_t.position.x - 0.025f, alien_t.position.y, 0.0f));
 			alienBullet->isActive = true;
 		}
-		else {
-			std::cout << "ERR ON ALIENSHOOT IT" << std::endl;
-		}
 	}
 }
 
 void degradebarrier() {
 	if ((int)barrier_arr.size() > 1) {
-		int barrier = glm::linearRand(0, (int)barrier_arr.size());
+		int barrier = glm::linearRand(0, (int)barrier_arr.size() - 1);
 
 		barrier_arr[barrier].barrierIndex++;
 		if (barrier_arr[barrier].barrierIndex == 3) {
@@ -331,8 +319,6 @@ void update() {
 				alien_arr[i].changeTexture();
 			}
 		}
-
-		std::cout << gs->alienMoveSpeed << std::endl;
 		gs->alienMoveTimer = 0;
 	}
 	else {
@@ -342,8 +328,6 @@ void update() {
 	if (alien_arr.size() == 0) {
 		gs->gameover = true;
 	}
-
-	//int rnd = glm::linearRand(1, 3);
 
 	if (gs->alienShootTimer == gs->rndShot * 60) {
 		alienShoot();
@@ -358,37 +342,6 @@ void update() {
 		gs->barricadeTimer = 0;
 	}
 	gs->barricadeTimer++;
-
-
-
-
-
-
-
-
-
-
-	/* Tried to make Aliens spin off when killed. shit aint working. ill fix one day. */
-
-	//for (int i = 0; i < alien_arr.size(); i++) {
-	//	if (alien_arr[i].isDead) {
-	//		glm::highp_vec3 start = { -0.875f, 0.915f, 0.0f };
-
-	//		float xdist = glm::distance(start.x, alien_arr[i].position.x);
-	//		float ydist = glm::distance(start.y, alien_arr[i].position.y);
-
-	//		alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ -xdist, ydist, 0.0f });
-	//
-	//		alien_arr[i]._transRotate = glm::rotate(alien_arr[i]._transRotate, glm::radians(0.1f), glm::vec3{ 0.0f, 0.0f, 1.0f });
-
-	//		alien_arr[i]._transTranslate = glm::translate(alien_arr[i]._transTranslate, glm::vec3{ xdist, -ydist, 0.0f });
-
-	//	
-
-	//		std::cout << "X : " << xdist << " | Y : " << ydist << std::endl;
-	//	}
-	//}
-
 }
 void useVPShader() {
 	glUseProgram(sprog_arr[8]);
@@ -677,6 +630,7 @@ void setupEntities() {
 
 	// Aligns alienbullet to alien. 
 	alienBullet->arrangeToAlien();
+	alienShoot();
 
 	/* Text */
 	text_arr[0]->_transTranslate = glm::translate(text_arr[0]->_transTranslate, glm::vec3(0.05f, 0.05f, 0.0f));
@@ -792,8 +746,6 @@ int main(int argc, char *argv[]) {
 
 		render();
 	}
-
-	// Clean up
 
 	delete player;
 

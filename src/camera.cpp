@@ -97,13 +97,11 @@ void camera::moveCam(SDL_Keycode dir, glm::vec3 position) {
 	if (position[0] <= 0.95f) {			//&& position[0] >= -0.9f
 		if (dir == SDLK_RIGHT) {
 			 _viewMat = glm::translate(_viewMat, glm::vec3(-0.05f, 0.0f, 0.0f));
-			//position[0] -= 0.05f;
 		}
 	}
 	if (position[0] >= -0.95f) {
 		if (dir == SDLK_LEFT) {
 			_viewMat = glm::translate(_viewMat, glm::vec3(0.05f, 0.0f, 0.0f));
-			//position[0] += 0.05f;
 		}
 	}
 }

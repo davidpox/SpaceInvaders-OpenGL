@@ -166,20 +166,17 @@ void bullet::resetPositionX(glm::vec3 playerPos, SDL_Keycode dir) {
 		if (dir == SDLK_LEFT) {
 			if (position[0] >= -0.95f) {
 				distTravelled[0] -= 0.05f;
-				//std::cout << "ISACTIVE::DIR_LEFT {{}} DT: " << distTravelled[0] << std::endl;
 				moved = true;
 			}
 		}
 		if (dir == SDLK_RIGHT) {
 			if (position[0] <= 0.95f) {
 				distTravelled[0] += 0.05f;
-				//std::cout << "ISACTIVE::DIR_RIGHT {{}} DT: " << distTravelled[0] << std::endl;
 				moved = true;
 			}
 		}
 	}
 	if (moved && !isActive) {
-	//	_transTranslate = glm::translate(_transTranslate, glm::vec3(distTravelled[0], 0.0f, 0.0f));
 		position[0] += distTravelled[0];
 		distTravelled[0] = 0.0f;
 		moved = false;
@@ -187,13 +184,11 @@ void bullet::resetPositionX(glm::vec3 playerPos, SDL_Keycode dir) {
 	if (!isActive) {
 		if (position[0] >= -0.95f) {	
 			if (dir == SDLK_LEFT) {
-		//		_transTranslate = glm::translate(_transTranslate, glm::vec3(-0.05f, 0.0f, 0.0f));
 				position[0] -= 0.05f;
 			}
 		}
 		if (position[0] <= 0.95f) {
 			if (dir == SDLK_RIGHT) {
-		//		_transTranslate = glm::translate(_transTranslate, glm::vec3(0.05f, 0.0f, 0.0f));
 				position[0] += 0.05f;
 			}
 		}
