@@ -98,7 +98,6 @@ GLuint PlayerShip::createShaderProgram() {
 		"color = texture(outTexture, TexCoord) * vec4(0.0f, 1.0f, 0.0f, 1.0f);		\n"
 		"}																			\n\0"
 	};
-
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);		//create vertex shader
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);	//create fragment shader
 
@@ -152,13 +151,13 @@ GLuint PlayerShip::createShaderProgram() {
 void PlayerShip::movePlayer(SDL_Keycode dir) {
 	if (position[0] >= -0.95f) {			//&& position[0] >= -0.9f
 		if (dir == SDLK_LEFT) {
-			_transTranslate = glm::translate(_transTranslate, glm::vec3(-0.05f, 0.0f, 0.0f));
+			//_transTranslate = glm::translate(_transTranslate, glm::vec3(-0.05f, 0.0f, 0.0f));
 			position[0] -= 0.05f;
 		}
 	}
 	if (position[0] <= 0.95f) {
 		if (dir == SDLK_RIGHT) {
-			_transTranslate = glm::translate(_transTranslate, glm::vec3(0.05f, 0.0f, 0.0f));
+			//_transTranslate = glm::translate(_transTranslate, glm::vec3(0.05f, 0.0f, 0.0f));
 			position[0] += 0.05f;
 		}
 	}

@@ -18,6 +18,7 @@
 #include "TextHandler.h"
 #include "Background.h"
 #include "SolidWall.h"
+#include "camera.h"
 
 // // - OpenGL Mathematics - https://glm.g-truc.net/
 #define GLM_FORCE_RADIANS // force glm to use radians
@@ -37,6 +38,7 @@ bullet *alienBullet = new bullet("alien");
 alien *aliens = new alien();
 shotHandler *sh = new shotHandler();
 gamestate *gs = new gamestate();
+camera *cam = new camera();
 
 
 std::vector<GLuint> sprog_arr;
@@ -50,73 +52,10 @@ std::vector<SolidWall> world_bounds;
 
 bool isGameRunning;
 
-void checkErrors() {
-	GLenum error = glGetError();
-	switch (error) {
-	case GL_INVALID_ENUM:
-		std::cout << "An unacceptable value is specified for an enumerated argument." << std::endl;
-		break;
-	case GL_INVALID_VALUE:
-		std::cout << "A numeric argument is out of range." << std::endl;
-		break;
-	case GL_INVALID_OPERATION:
-		std::cout << "The specified operation is not allowed in the current state." << std::endl;
-		break;
-	case GL_INVALID_FRAMEBUFFER_OPERATION:
-		std::cout << "The framebuffer object is not complete." << std::endl;
-		break;
-	case GL_OUT_OF_MEMORY:
-		std::cout << "There is not enough memory left to execute the command." << std::endl;
-		break;
-	case GL_STACK_UNDERFLOW:
-		std::cout << "An attempt has been made to perform an operation that would cause an internal stack to underflow." << std::endl;
-		break;
-	case GL_STACK_OVERFLOW:
-		std::cout << "An attempt has been made to perform an operation that would cause an internal stack to overflow." << std::endl;
-		break;
-	case GL_NO_ERROR:
-	default:
-		break;
-	}
-}
-
 void SetOpenGLAttr() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-}
-
-static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
-
-	switch (type) {
-	case GL_DEBUG_TYPE_ERROR:
-		std::cout << "ERROR" << std::endl;
-		break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-		std::cout << "DEPRECATED_BEHAVIOR" << std::endl;
-		break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-		std::cout << "UNDEFINED_BEHAVIOR" << std::endl;
-		break;
-	case GL_DEBUG_TYPE_PORTABILITY:
-		std::cout << "PORTABILITY" << std::endl;
-		break;
-	case GL_DEBUG_TYPE_PERFORMANCE:
-		std::cout << "PERFORMANCE" << std::endl;
-		break;
-	case GL_DEBUG_TYPE_OTHER:
-		std::cout << "OTHER" << std::endl;
-		break;
-	}
-
-	(void)source; (void)type; (void)id;
-	(void)severity; (void)length; (void)userParam;
-	fprintf(stderr, "%s\n", message);
-	if (severity == GL_DEBUG_SEVERITY_HIGH) {
-		fprintf(stderr, "Aborting...\n");
-		abort();
-	}
-
 }
 
 int init() {
@@ -181,19 +120,16 @@ int init() {
 
 	if (winWidth > winHeight) {
 		glViewport(winWidth/4, 0, winHeight, winHeight);
+		gs->windowWidth = winHeight;
+		gs->windowHeight = winHeight;
 	}
 	else {
 		glViewport(0, winHeight/4, winWidth, winWidth);
+		gs->windowWidth = winWidth;
+		gs->windowHeight = winWidth;
 	}
 
 	//glViewport(0, 0, 500, 500);
-
-	/* DEBUG INITIALISATION*/
-
-	std::cout << "Registering OpenGL Debug callback function" << std::endl;
-	glDebugMessageCallback(openglCallbackFunction, nullptr);
-	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, true);
-
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -218,6 +154,8 @@ void resizeWindow() {
 	}
 
 	glViewport(0, 0, tw, th);
+	gs->windowHeight = th;
+	gs->windowWidth = tw;
 }
 
 void getInput() {
@@ -231,6 +169,7 @@ void getInput() {
 				player->movePlayer(ev.key.keysym.sym);
 				bg_arr[0].moveBG(ev.key.keysym.sym);
 				bg_arr[1].moveBG(ev.key.keysym.sym);
+				cam->moveCam(ev.key.keysym.sym, player->position);
 				bullets->resetPositionX(player->position, ev.key.keysym.sym);
 				break;
 			case SDLK_SPACE:
@@ -429,7 +368,7 @@ void update() {
 
 	/* Tried to make Aliens spin off when killed. shit aint working. ill fix one day. */
 
-	/*for (int i = 0; i < alien_arr.size(); i++) {
+	for (int i = 0; i < alien_arr.size(); i++) {
 		if (alien_arr[i].isDead) {
 			glm::highp_vec3 start = { -0.875f, 0.915f, 0.0f };
 
@@ -446,8 +385,20 @@ void update() {
 
 			std::cout << "X : " << xdist << " | Y : " << ydist << std::endl;
 		}
-	}*/
+	}
 
+}
+void useVPShader() {
+	glUseProgram(sprog_arr[8]);
+	glm::mat4 view;
+	glm::mat4 projection;
+
+	projection = glm::ortho(0.0f, 4.0f, 0.0f, 3.0f, -1.0f, 100.0f);
+	view = glm::translate(view, glm::vec3(0.5f, 0.0f, -1.0f));
+	GLint viewLoc = glGetUniformLocation(sprog_arr[8], "viewMat");
+	GLint projLoc = glGetUniformLocation(sprog_arr[8], "projectionMat");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(cam->_viewMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 void render() {
@@ -458,7 +409,10 @@ void render() {
 
 	 
 	if (!gs->gameover) {
-		glUseProgram(sprog_arr[6]);
+		
+		useVPShader();
+
+		//glUseProgram(sprog_arr[6]);
 		for (int i = 0; i < bg_arr.size(); i++) {
 			GLint bgTransLocation = glGetUniformLocation(sprog_arr[6], "trans");
 			glUniformMatrix4fv(bgTransLocation, 1, GL_FALSE, glm::value_ptr(bg_arr[i]._transTranslate * bg_arr[i]._transRotate * bg_arr[i]._transScale));
@@ -468,8 +422,6 @@ void render() {
 			glBindVertexArray(0);
 		}
 
-
-
 		// Player
 		glUseProgram(sprog_arr[0]);
 		GLint playertransLocation = glGetUniformLocation(sprog_arr[0], "trans");
@@ -478,6 +430,7 @@ void render() {
 		glBindVertexArray(vao_arr[0]);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+		useVPShader();
 
 
 		if (bullets->isActive) {
@@ -490,10 +443,10 @@ void render() {
 			glBindVertexArray(vao_arr[1]);
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
+			useVPShader();
 		}
 
-		glUseProgram(sprog_arr[2]);
-
+	//	glUseProgram(sprog_arr[2]);
 		for (int i = 0; i < alien_arr.size(); i++) {
 			GLint alienstransLocation = glGetUniformLocation(sprog_arr[2], "trans");
 			glUniformMatrix4fv(alienstransLocation, 1, GL_FALSE, glm::value_ptr(alien_arr[i]._transTranslate * alien_arr[i]._transRotate * alien_arr[i]._transScale));
@@ -502,19 +455,21 @@ void render() {
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
+	//	useVPShader();
 
 
 		if (alienBullet->isActive) {
-			glUseProgram(sprog_arr[3]);
+			//glUseProgram(sprog_arr[3]);
 			GLint bullettransLocation = glGetUniformLocation(sprog_arr[3], "trans");
 			glUniformMatrix4fv(bullettransLocation, 1, GL_FALSE, glm::value_ptr(alienBullet->_transTranslate * alienBullet->_transRotate * alienBullet->_transScale));
 			glBindTexture(GL_TEXTURE_2D, alienBullet->texture);
 			glBindVertexArray(vao_arr[57]);
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
+			//useVPShader();
 		}
 
-		glUseProgram(sprog_arr[4]);
+	//	glUseProgram(sprog_arr[4]);
 		for (int i = 0; i < barrier_arr.size(); i++) {
 			GLint barrierTransLoc = glGetUniformLocation(sprog_arr[4], "trans");
 			glUniformMatrix4fv(barrierTransLoc, 1, GL_FALSE, glm::value_ptr(barrier_arr[i]._transTranslate * barrier_arr[i]._transRotate * barrier_arr[i]._transScale));
@@ -523,6 +478,7 @@ void render() {
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
+	//	useVPShader();
 
 		glUseProgram(sprog_arr[5]);
 		for (int i = 0; i < text_arr.size() - 1; i++) {
@@ -534,6 +490,7 @@ void render() {
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
+		useVPShader();
 
 		if (gs->playerlives >= 1) {
 			glUseProgram(sprog_arr[0]);
@@ -545,6 +502,7 @@ void render() {
 				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 				glBindVertexArray(0);
 			}
+			useVPShader();
 		}
 
 		glUseProgram(sprog_arr[7]);
@@ -555,6 +513,7 @@ void render() {
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
+	 	useVPShader();
 	}
 	else if (gs->gameover) {
 		glUseProgram(sprog_arr[5]);
@@ -564,6 +523,7 @@ void render() {
 		glBindVertexArray(vao_arr[78]);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+		useVPShader();
 	}
 
 	SDL_GL_SwapWindow(win);
@@ -661,6 +621,7 @@ void setupBarriers(float xOffset, int it) {
 }
 
 void setupEntities() {
+	/* Creating Objects */
 	text_arr.push_back(new TextHandler());
 	text_arr.push_back(new TextHandler());
 	text_arr.push_back(new TextHandler());
@@ -678,6 +639,7 @@ void setupEntities() {
 	world_bounds.push_back(SolidWall());
 
 
+	/* Adding to VAO vector*/
 	vao_arr.push_back(player->createSprite("player"));
 	vao_arr.push_back(bullets->createSprite("bullet"));
 	setupAliens();
@@ -698,6 +660,8 @@ void setupEntities() {
 	vao_arr.push_back(world_bounds[2].createSprite());
 	vao_arr.push_back(world_bounds[3].createSprite());
 
+
+	/* Creating shader programs */
 	sprog_arr.push_back(player->createShaderProgram());
 	sprog_arr.push_back(bullets->createShaderProgram());
 	sprog_arr.push_back(alien_arr[0].createShaderProgram());
@@ -706,23 +670,31 @@ void setupEntities() {
 	sprog_arr.push_back(text_arr[0]->createShaderProgram());
 	sprog_arr.push_back(bg_arr[0].createShaderProgram());
 	sprog_arr.push_back(world_bounds[0].createShaderProgram());
+	sprog_arr.push_back(cam->createShaderProgram());
 
 
+	// Aligns alienbullet to alien. 
 	alienBullet->arrangeToAlien();
+
+	/* Text */
 	text_arr[0]->_transTranslate = glm::translate(text_arr[0]->_transTranslate, glm::vec3(0.05f, 0.05f, 0.0f));
 	text_arr[1]->_transTranslate = glm::translate(text_arr[1]->_transTranslate, glm::vec3(1.0f, 0.05f, 0.0f));
 	text_arr[2]->_transTranslate = glm::translate(text_arr[2]->_transTranslate, glm::vec3(0.7f, 0.9f, 0.0f));
 
+	/* Lives */
 	lives_arr[0]->_transTranslate = glm::translate(lives_arr[0]->_transTranslate, glm::vec3(0.5f, -0.12f, 0.0f));
 	lives_arr[1]->_transTranslate = glm::translate(lives_arr[1]->_transTranslate, glm::vec3(0.65f, -0.12f, 0.0f));
 	lives_arr[2]->_transTranslate = glm::translate(lives_arr[2]->_transTranslate, glm::vec3(0.8f, -0.12f, 0.0f));
 
+
+	/* Walls */
 	world_bounds[0]._transRotate = glm::rotate(world_bounds[0]._transRotate, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	world_bounds[0]._transTranslate = glm::translate(world_bounds[0]._transTranslate, glm::vec3(0.0f, 1.0f, 0.0f));
 	world_bounds[1]._transRotate = glm::rotate(world_bounds[1]._transRotate, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	world_bounds[1]._transTranslate = glm::translate(world_bounds[1]._transTranslate, glm::vec3(0.0f, -1.0f, 0.0f));
 	world_bounds[2]._transTranslate = glm::translate(world_bounds[2]._transTranslate, glm::vec3(-1.0f, 0.0f, 0.0f));
 	world_bounds[3]._transTranslate = glm::translate(world_bounds[3]._transTranslate, glm::vec3(1.0f, 0.0f, 0.0f));
+
 }
 
 int main(int argc, char *argv[]) {
@@ -738,7 +710,7 @@ int main(int argc, char *argv[]) {
 		system("PAUSE");
 		return 1;
 	}
-
+	
 	setupEntities();
 	gs->rndShot = glm::linearRand(1, 3);
 
@@ -751,7 +723,6 @@ int main(int argc, char *argv[]) {
 
 		getInput();
 
-		//alienShoot();
 		if (frametime >= 0.0166f) {
 			update();
 
@@ -760,7 +731,7 @@ int main(int argc, char *argv[]) {
 
 		for (int i = 0; i < alien_arr.size(); i++) {						/* Alien <-> PlayerBullet collision */
 			if (checkCollisions(alien_arr[i], *bullets)) {
-				alien_arr.erase(alien_arr.begin() + i);
+				//alien_arr.erase(alien_arr.begin() + i);
 				bullets->isActive = false;
 				bullets->resetPositionY();
 				bullets->resetPositionX(player->position, SDLK_UP);
@@ -776,7 +747,7 @@ int main(int argc, char *argv[]) {
 					barrier_arr.erase(barrier_arr.begin() + i);
 				}
 				else {
-					barrier_arr[i].breakBarrier();//"broken_" + barrier_arr[i].barrierIndex);
+					barrier_arr[i].breakBarrier();
 					bullets->isActive = false;
 					bullets->resetPositionY();
 					bullets->resetPositionX(player->position, SDLK_UP);
@@ -796,7 +767,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
-		if (checkCollisions(*alienBullet, *player)) {
+		if (checkCollisions(*alienBullet, *player)) {					/* AlienBullet <-> Player collision */
 			gs->playerlives--;
 			if (gs->playerlives > 0) {
 				lives_arr.pop_back();
@@ -808,7 +779,7 @@ int main(int argc, char *argv[]) {
 				gs->gameover = true;
 			}
 		}
-		for (int i = 0; i < alien_arr.size(); i++) {					/* Alien <-> Barrier Detecction */
+		for (int i = 0; i < alien_arr.size(); i++) {					/* Alien <-> Barrier Collision */
 			for (int j = 0; j < barrier_arr.size(); j++) {
 				if (checkCollisions(alien_arr[i], barrier_arr[j])) {
 					gs->gameover = true;
@@ -827,5 +798,6 @@ int main(int argc, char *argv[]) {
 	SDL_Log("Finished. Cleaning up and closing down\n");
 
 	SDL_Quit();
+	delete win;
 	return 0;
 }

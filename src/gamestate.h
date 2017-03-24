@@ -18,5 +18,7 @@ public:
 	float alienMoveSpeed;
 	int alienAnimTimer;
 
+	int windowHeight, windowWidth;
+
 };
 

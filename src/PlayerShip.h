@@ -26,6 +26,7 @@ public:
 	SDL_Surface* img;
 	GLuint VAO, VBO, EBO, texture;
 	glm::mat4 _transRotate, _transTranslate, _transScale;
+	glm::mat4 _model, _view, _projection;
 
 	int h, w;
 };

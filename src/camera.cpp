@@ -1,74 +1,45 @@
-#include "SolidWall.h"
+#include "camera.h"
 
 
 
-SolidWall::SolidWall()
-{
-	h = 1.0f;
-	w = 0.1f;
-}
-
-
-SolidWall::~SolidWall()
+camera::camera()
 {
 }
 
-GLuint SolidWall::createSprite() {
-	GLfloat verts[] = {
-		// Positions			// Color Coords 
-		-0.025f, -1.0f, 0.0f,		0.0f, 0.0f, 1.0f,	// BL
-		 0.025f, -1.0f, 0.0f,		0.0f, 1.0f, 0.0f, // BR
-		 0.025f,  1.0f, 0.0f,		1.0f, 0.0f, 0.0f, // TR
-		-0.025f,  1.0f, 0.0f,		1.0f, 1.0f, 0.0f	// TL
-	};
-	GLuint ind[] = {
-		0, 1, 3,
-		1, 2, 3
-	};
 
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ind), ind, GL_STATIC_DRAW);
-
-	// Pos 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	// Colour
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-	glBindVertexArray(0);
-
-	return VAO;
+camera::~camera()
+{
 }
 
-GLuint SolidWall::createShaderProgram() {
+GLuint camera::createShaderProgram() {
 	GLuint shaderProgram, vertexShader, fragmentShader;
 
 	const GLchar* vertexShaderSource[] = {
 		"#version 440 core															\n"
 		"layout (location = 0) in vec3 position;									\n"
 		"layout (location = 1) in vec3 color;										\n"
+		"layout (location = 2) in vec2 texCoord;									\n"
+		"out vec2 TexCoord;															\n"
 		"out vec3 ourColor;															\n"
 		"uniform mat4 trans;														\n"
+		"uniform mat4 modelMat;														\n"
+		"uniform mat4 viewMat;														\n"
+		"uniform mat4 projectionMat;												\n"
 		"void main()																\n"
 		"{																			\n"
-		"gl_Position = trans * vec4(position.x, position.y, position.z, 1.0f); \n"
+		"gl_Position = projectionMat * viewMat * vec4(position.x, position.y, position.z, 1.0f); \n"
 		"ourColor = color;															\n"
-		"}																			\n"
+		"TexCoord = vec2(texCoord.x, 1.0f - texCoord.y);}							\n"
 	};
 	const GLchar* fragmentShaderSource[] = {
 		"#version 440 core															\n"
 		"in vec3 ourColor;															\n"
+		"in vec2 TexCoord;															\n"
+		"uniform sampler2D outTexture;												\n"
 		"out vec4 color;															\n"
 		"void main()																\n"
 		"{																			\n"
-		"color = vec4(1.0f, 1.0f, 1.0f, 1.0f);										\n"
+		"color = texture(outTexture, TexCoord) * vec4(1.0f, 1.0f, 1.0f, 1.0f);		\n"		// the vec4 controls the colour. could do a uniform but why 
 		"}																			\n\0"
 	};
 
@@ -88,7 +59,7 @@ GLuint SolidWall::createShaderProgram() {
 
 	if (!success) {
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "PLAYERSHIP::VERTEX::SHADER CREATION ERROR: " << infoLog << std::endl;
+		std::cout << "CAMERA::VERTEX::SHADER CREATION ERROR: " << infoLog << std::endl;
 		return 1;
 	}
 
@@ -96,7 +67,7 @@ GLuint SolidWall::createShaderProgram() {
 
 	if (!success) {
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "PLAYERSHIP::FRAGMENT::SHADER CREATION ERROR: " << infoLog << std::endl;
+		std::cout << "CAMERA::FRAGMENT::SHADER CREATION ERROR: " << infoLog << std::endl;
 		return 1;
 	}
 
@@ -120,4 +91,19 @@ GLuint SolidWall::createShaderProgram() {
 	}
 
 	return shaderProgram;
+}
+
+void camera::moveCam(SDL_Keycode dir, glm::vec3 position) {
+	if (position[0] <= 0.95f) {			//&& position[0] >= -0.9f
+		if (dir == SDLK_RIGHT) {
+			 _viewMat = glm::translate(_viewMat, glm::vec3(-0.05f, 0.0f, 0.0f));
+			//position[0] -= 0.05f;
+		}
+	}
+	if (position[0] >= -0.95f) {
+		if (dir == SDLK_LEFT) {
+			_viewMat = glm::translate(_viewMat, glm::vec3(0.05f, 0.0f, 0.0f));
+			//position[0] += 0.05f;
+		}
+	}
 }
