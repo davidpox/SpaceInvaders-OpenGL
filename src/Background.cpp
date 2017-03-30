@@ -151,7 +151,7 @@ GLuint Background::createShaderProgram() {
 }
 
 void Background::moveBG(SDL_Keycode dir) {
-	if (position[0] >= -0.95f) {			//&& position[0] >= -0.9f
+	if (position[0] >= -0.95f) {
 		if (dir == SDLK_LEFT) {
 			_transTranslate = glm::translate(_transTranslate, glm::vec3(-speed, 0.0f, 0.0f));
 			position[0] -= speed;

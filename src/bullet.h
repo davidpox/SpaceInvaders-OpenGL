@@ -37,8 +37,6 @@ public:
 
 	std::string name;
 
-
-
 	SDL_Surface* img;
 	GLuint VAO, VBO, EBO, texture;
 };

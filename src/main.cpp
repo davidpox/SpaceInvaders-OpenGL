@@ -681,7 +681,6 @@ int main(int argc, char *argv[]) {
 
 		if (frametime >= 0.0166f) {
 			update();
-
 			frametime = 0.0f;
 		}
 
